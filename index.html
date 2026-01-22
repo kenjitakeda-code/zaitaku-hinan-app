@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在宅避難支援システム</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        
+        :root {
+            /* カラーユニバーサルデザイン配慮の色設定 */
+            --primary-blue: #0066CC;
+            --primary-red: #CC3333;
+            --primary-green: #009944;
+            --primary-orange: #FF9900;
+            --bg-gray: #F5F5F5;
+            --text-dark: #333333;
+            --border-color: #DDDDDD;
+            --white: #FFFFFF;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background-color: var(--white);
+            padding: 1rem;
+            box-shadow: 0 2px 4px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background-color: var(--bg-gray);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+        
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background-color: var(--white);
+            box-shadow: 0 2px 4px var(--shadow);
+        }
+        
+        .mode-btn.normal.active {
+            color: var(--primary-blue);
+        }
+        
+        .mode-btn.emergency.active {
+            color: var(--primary-red);
+        }
+        
+        /* メインコンテナ */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        /* タブナビゲーション */
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            background-color: var(--white);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        .tab-btn.active {
+            border-color: var(--primary-blue);
+            background-color: var(--primary-blue);
+            color: var(--white);
+        }
+        
+        .tab-icon {
+            font-size: 2rem;
+        }
+        
+        /* カードスタイル */
+        .card {
+            background-color: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* 緊急報告ボタン */
+        .emergency-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .emergency-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .big-button {
+            padding: 3rem 2rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .big-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+        
+        .big-button:active {
+            transform: translateY(-2px);
+        }
+        
+        .big-button.safe {
+            background-color: var(--primary-green);
+            color: var(--white);
+        }
+        
+        .big-button.rescue {
+            background-color: var(--primary-red);
+            color: var(--white);
+        }
+        
+        .button-icon {
+            font-size: 4rem;
+        }
+        
+        /* 物資選択 */
+        .supplies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .supply-item {
+            padding: 1.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--white);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        
+        .supply-item:hover {
+            border-color: var(--primary-blue);
+        }
+        
+        .supply-item.selected {
+            border-color: var(--primary-blue);
+            background-color: #E6F2FF;
+        }
+        
+        .supply-icon {
+            font-size: 2.5rem;
+        }
+        
+        .supply-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        /* 掲示板スタイル */
+        .board-post {
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-blue);
+            background-color: var(--bg-gray);
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .post-content {
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        
+        .post-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background-color: var(--primary-orange);
+            color: var(--white);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* 自治体管理画面 */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-blue), #0052A3);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table th {
+            background-color: var(--bg-gray);
+            font-weight: 700;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        
+        .status-safe {
+            background-color: #E8F5E9;
+            color: var(--primary-green);
+        }
+        
+        .status-rescue {
+            background-color: #FFEBEE;
+            color: var(--primary-red);
+        }
+        
+        .status-unknown {
+            background-color: var(--bg-gray);
+            color: #666;
+        }
+        
+        /* アクションボタン */
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        
+        .action-btn.primary {
+            background-color: var(--primary-blue);
+            color: var(--white);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        /* 非表示クラス */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* レスポンシブ調整 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .tab-nav {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span>🏠</span>
+                <span>在宅避難支援システム</span>
+            </div>
+            <div class="mode-toggle">
+                <button class="mode-btn normal active" onclick="switchMode('normal')">平常時</button>
+                <button class="mode-btn emergency" onclick="switchMode('emergency')">災害時</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="container">
+        <!-- 住民向けタブナビゲーション -->
+        <div id="residentTabs" class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('home')">
+                <span class="tab-icon">🏠</span>
+                <span>ホーム</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('board')">
+                <span class="tab-icon">📋</span>
+                <span>掲示板</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('circular')">
+                <span class="tab-icon">📰</span>
+                <span>回覧板</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('admin')">
+                <span class="tab-icon">⚙️</span>
+                <span>自治体管理</span>
+            </button>
+        </div>
+
+        <!-- ホーム画面 -->
+        <div id="homeContent" class="content-section">
+            <!-- 平常時メッセージ -->
+            <div id="normalMessage" class="card">
+                <h2 class="card-title">📢 お知らせ</h2>
+                <p>現在は平常時モードです。掲示板や回覧板をご利用いただけます。</p>
+                <p style="margin-top: 1rem; color: #666;">災害発生時は画面右上の「災害時」ボタンを押して、緊急モードに切り替えてください。</p>
+            </div>
+
+            <!-- 災害時緊急報告 -->
+            <div id="emergencyReport" class="card hidden">
+                <h2 class="card-title">🚨 緊急状況報告</h2>
+                
+                <div class="emergency-buttons">
+                    <button class="big-button safe" onclick="reportStatus('safe')">
+                        <span class="button-icon">✅</span>
+                        <span>無事です<br>（在宅避難中）</span>
+                    </button>
+                    <button class="big-button rescue" onclick="reportStatus('rescue')">
+                        <span class="button-icon">🆘</span>
+                        <span>救助必要</span>
+                    </button>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-weight: 700;">必要な物資を選択してください</h3>
+                <div class="supplies-grid">
+                    <div class="supply-item" onclick="toggleSupply(this, 'water')">
+                        <span class="supply-icon">💧</span>
+                        <span class="supply-label">水</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'food')">
+                        <span class="supply-icon">🍱</span>
+                        <span class="supply-label">食料</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'blanket')">
+                        <span class="supply-icon">🛏️</span>
+                        <span class="supply-label">毛布</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'medicine')">
+                        <span class="supply-icon">💊</span>
+                        <span class="supply-label">医薬品</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'battery')">
+                        <span class="supply-icon">🔋</span>
+                        <span class="supply-label">電池</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'light')">
+                        <span class="supply-icon">🔦</span>
+                        <span class="supply-label">懐中電灯</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'toilet')">
+                        <span class="supply-icon">🚽</span>
+                        <span class="supply-label">簡易トイレ</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'diaper')">
+                        <span class="supply-icon">👶</span>
+                        <span class="supply-label">おむつ</span>
+                    </div>
+                    <div class="supply-item" onclick="toggleSupply(this, 'petfood')">
+                        <span class="supply-icon">🐕</span>
+                        <span class="supply-label">ペット用品</span>
+                    </div>
+                </div>
+
+                <button class="action-btn primary" style="margin-top: 2rem; width: 100%;" onclick="submitReport()">
+                    送信する
+                </button>
+            </div>
+        </div>
+
+        <!-- 掲示板 -->
+        <div id="boardContent" class="content-section hidden">
+            <div class="card">
+                <h2 class="card-title">📋 地域掲示板</h2>
+                
+                <div class="board-post">
+                    <div class="post-header">
+                        <span><strong>自治会事務局</strong></span>
+                        <span>2026年1月20日</span>
+                    </div>
+                    <div class="post-content">
+                        次回の防災訓練は2月15日（日）午前9時から実施します。在宅避難の訓練も行いますので、ぜひご参加ください。
+                    </div>
+                </div>
+
+                <div class="board-post">
+                    <div class="post-header">
+                        <span><strong>山田太郎</strong></span>
+                        <span>2026年1月18日</span>
+                    </div>
+                    <div class="post-content">
+                        地域の防災倉庫の場所を確認しました。マップに追加していただけると助かります。
+                    </div>
+                </div>
+
+                <div class="board-post">
+                    <div class="post-header">
+                        <span><strong>佐藤花子</strong></span>
+                        <span>2026年1月15日</span>
+                    </div>
+                    <div class="post-content">
+                        在宅避難用の備蓄品リストを共有します。参考にしてください。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 回覧板 -->
+        <div id="circularContent" class="content-section hidden">
+            <div class="card">
+                <h2 class="card-title">📰 回覧板</h2>
+                
+                <div class="board-post">
+                    <span class="post-badge">自治会</span>
+                    <div class="post-header">
+                        <span><strong>2026年2月 行事予定</strong></span>
+                        <span>2026年1月22日</span>
+                    </div>
+                    <div class="post-content">
+                        2/15（日）防災訓練、2/22（日）清掃活動を予定しています。
+                    </div>
+                </div>
+
+                <div class="board-post">
+                    <span class="post-badge">市役所</span>
+                    <div class="post-header">
+                        <span><strong>防災アプリの登録について</strong></span>
+                        <span>2026年1月10日</span>
+                    </div>
+                    <div class="post-content">
+                        市の防災情報配信アプリへの登録をお願いします。災害時の情報伝達手段として重要です。
+                    </div>
+                </div>
+
+                <div class="board-post">
+                    <span class="post-badge">自治会</span>
+                    <div class="post-header">
+                        <span><strong>在宅避難の準備について</strong></span>
+                        <span>2026年1月5日</span>
+                    </div>
+                    <div class="post-content">
+                        最低3日分（できれば1週間分）の水と食料の備蓄をお願いします。詳しくは配布した防災マニュアルをご確認ください。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自治体管理画面 -->
+        <div id="adminContent" class="content-section hidden">
+            <div class="card">
+                <h2 class="card-title">⚙️ 自治体管理画面</h2>
+                
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">248</div>
+                        <div class="stat-label">登録世帯数</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--primary-green), #007A33);">
+                        <div class="stat-number">156</div>
+                        <div class="stat-label">無事報告</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--primary-red), #A32929);">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">救助要請</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #666, #444);">
+                        <div class="stat-number">89</div>
+                        <div class="stat-label">未報告</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-weight: 700;">住民状況一覧</h3>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>世帯番号</th>
+                                <th>状態</th>
+                                <th>報告時刻</th>
+                                <th>必要物資</th>
+                                <th>アクション</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>A-001</td>
+                                <td><span class="status-badge status-safe">無事</span></td>
+                                <td>1/22 10:30</td>
+                                <td>水、食料</td>
+                                <td><button class="action-btn primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">詳細</button></td>
+                            </tr>
+                            <tr>
+                                <td>A-002</td>
+                                <td><span class="status-badge status-rescue">救助要請</span></td>
+                                <td>1/22 09:15</td>
+                                <td>医薬品</td>
+                                <td><button class="action-btn primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">詳細</button></td>
+                            </tr>
+                            <tr>
+                                <td>A-003</td>
+                                <td><span class="status-badge status-safe">無事</span></td>
+                                <td>1/22 11:00</td>
+                                <td>なし</td>
+                                <td><button class="action-btn primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">詳細</button></td>
+                            </tr>
+                            <tr>
+                                <td>A-004</td>
+                                <td><span class="status-badge status-unknown">未報告</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><button class="action-btn primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">詳細</button></td>
+                            </tr>
+                            <tr>
+                                <td>A-005</td>
+                                <td><span class="status-badge status-safe">無事</span></td>
+                                <td>1/22 10:45</td>
+                                <td>電池、懐中電灯</td>
+                                <td><button class="action-btn primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">詳細</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-weight: 700;">物資在庫管理</h3>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>物資</th>
+                                <th>在庫数</th>
+                                <th>必要数</th>
+                                <th>状態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>💧 水（2L）</td>
+                                <td>500本</td>
+                                <td>120本</td>
+                                <td><span class="status-badge status-safe">十分</span></td>
+                            </tr>
+                            <tr>
+                                <td>🍱 非常食</td>
+                                <td>300食</td>
+                                <td>95食</td>
+                                <td><span class="status-badge status-safe">十分</span></td>
+                            </tr>
+                            <tr>
+                                <td>💊 医薬品セット</td>
+                                <td>15セット</td>
+                                <td>8セット</td>
+                                <td><span class="status-badge status-rescue">不足</span></td>
+                            </tr>
+                            <tr>
+                                <td>🔋 電池（単3）</td>
+                                <td>200個</td>
+                                <td>45個</td>
+                                <td><span class="status-badge status-safe">十分</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'normal';
+        let currentTab = 'home';
+        let selectedSupplies = [];
+        let reportedStatus = null;
+
+        // モード切り替え
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // ボタンのアクティブ状態を更新
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+            
+            // コンテンツの表示切り替え
+            if (mode === 'normal') {
+                document.getElementById('normalMessage').classList.remove('hidden');
+                document.getElementById('emergencyReport').classList.add('hidden');
+            } else {
+                document.getElementById('normalMessage').classList.add('hidden');
+                document.getElementById('emergencyReport').classList.remove('hidden');
+            }
+        }
+
+        // タブ切り替え
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // タブボタンのアクティブ状態を更新
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.tab-btn').classList.add('active');
+            
+            // コンテンツの表示切り替え
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            switch(tab) {
+                case 'home':
+                    document.getElementById('homeContent').classList.remove('hidden');
+                    break;
+                case 'board':
+                    document.getElementById('boardContent').classList.remove('hidden');
+                    break;
+                case 'circular':
+                    document.getElementById('circularContent').classList.remove('hidden');
+                    break;
+                case 'admin':
+                    document.getElementById('adminContent').classList.remove('hidden');
+                    break;
+            }
+        }
+
+        // 物資選択のトグル
+        function toggleSupply(element, supplyId) {
+            element.classList.toggle('selected');
+            
+            const index = selectedSupplies.indexOf(supplyId);
+            if (index > -1) {
+                selectedSupplies.splice(index, 1);
+            } else {
+                selectedSupplies.push(supplyId);
+            }
+        }
+
+        // ステータス報告
+        function reportStatus(status) {
+            reportedStatus = status;
+            
+            // ボタンのハイライト効果
+            document.querySelectorAll('.big-button').forEach(btn => {
+                btn.style.opacity = '0.5';
+            });
+            event.target.style.opacity = '1';
+            event.target.style.transform = 'scale(1.05)';
+            
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // レポート送信
+        function submitReport() {
+            if (!reportedStatus) {
+                alert('⚠️ まず状態を報告してください（「無事です」または「救助必要」ボタンを押してください）');
+                return;
+            }
+            
+            const statusText = reportedStatus === 'safe' ? '無事（在宅避難中）' : '救助要請';
+            const suppliesText = selectedSupplies.length > 0 
+                ? '\n必要物資: ' + selectedSupplies.join(', ')
+                : '\n必要物資: なし';
+            
+            alert('✅ 報告を送信しました\n\n状態: ' + statusText + suppliesText + '\n\n自治体に情報が共有されました。');
+            
+            // リセット
+            reportedStatus = null;
+            selectedSupplies = [];
+            document.querySelectorAll('.big-button').forEach(btn => {
+                btn.style.opacity = '1';
+            });
+            document.querySelectorAll('.supply-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+    </script>
+</body>
+</html>
